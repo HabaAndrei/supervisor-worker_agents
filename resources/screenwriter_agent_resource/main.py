@@ -46,6 +46,7 @@ async def llm_call(state: GeneralChatAgentState):
     updated_messages = await llm_with_tools.ainvoke(
         [SystemMessage(content=(agent_config["SYSTEM_PROMPT"]))]
         + state_messages,
+        **agent_config.get("CONFIG", {}),
     )
 
     return {

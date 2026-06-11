@@ -13,16 +13,14 @@ async def scene_planner(question: str) -> str:
 
     log_important_step("Scene planner agent invoked", f"Question: {question[:80]}")
 
-    # Configure LLM for structured profile output
     llm_config_extra = agent_config.get("CONFIG", {})
 
-    # Analyze conversation for profile updates
     response = await llm.ainvoke(
         [
             SystemMessage(content=agent_config["SYSTEM_PROMPT"]),
             HumanMessage(content=question),
         ],
-        config=llm_config_extra if llm_config_extra else None,
+        **llm_config_extra,
     )
 
     final_content = response.content

@@ -46,6 +46,7 @@ async def llm_call(state: GeneralChatAgentState):
     updated_messages = await llm_with_tools.ainvoke(
         [SystemMessage(content=(agent_config["SYSTEM_PROMPT"]))]
         + state_messages,
+        **agent_config.get("CONFIG", {}),
     )
 
     return {
@@ -177,11 +178,11 @@ async def compile_executive_producer_agent_graph(
 
     response_messages = response.get("messages", [])
 
+    final_content = response_messages[-1].content
+
     log_message(f"Executive producer agent finished | Thread id: {thread_id}")
 
-    print("response_messages => ", response_messages)
-
-    print("\n\n last message => ", response_messages[-1].content)
+    return f"Thread id: {thread_id}\nContent: {final_content}"
 
 
 # asyncio.run(compile_executive_producer_agent_graph(

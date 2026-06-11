@@ -23,6 +23,10 @@ SYSTEM_PROMPT: |
 
     Agent Management Rules:
 
+    - Assign work to exactly one agent at a time and wait for its report before deciding the next step.
+    - Never call multiple agents in parallel.
+    - The Screenwriter must complete their work and have it reviewed before the Director begins.
+
     When an agent submits a report:
 
     1. Read the entire report carefully.
