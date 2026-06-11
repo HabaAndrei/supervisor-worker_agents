@@ -1,3 +1,4 @@
+from ...story_generator_agent_resource.main import story_generator
 from ...utils.state_declaration import GeneralChatAgentState
 from langchain.tools import tool
 
@@ -7,14 +8,13 @@ from langchain.tools import tool
         "Delegate story generation to the Story Generator agent. It creates the "
         "story concept: title, genre, setting, story summary, and main conflict. "
         "Call this before the Character Creator, since characters are built on "
-        "top of the story concept."
+        "top of the story concept. The Story Generator has no memory and only "
+        "knows what you pass it, so 'task' must contain the complete assignment "
+        "and all relevant context."
     )
 )
 async def call_story_generator_agent(
-    state: GeneralChatAgentState = None
+    task: str,
+    state: GeneralChatAgentState = None,
 ):
-    return (
-        "Error: The Story Generator agent is not implemented yet. Do not call "
-        "this tool again. Continue the task yourself and clearly state in your "
-        "report that the Story Generator was unavailable."
-    )
+    return await story_generator(task)
