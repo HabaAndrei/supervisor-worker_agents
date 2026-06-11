@@ -1,6 +1,6 @@
 import asyncio
 from langchain.chat_models import init_chat_model
-from .state_declaration import ChatAgentState
+from ..utils.state_declaration import GeneralChatAgentState
 from langgraph.graph import StateGraph, START, END
 from langchain.messages import (
     ToolMessage,
@@ -35,7 +35,7 @@ async def initialize_tools():
     return llm_with_tools
 
 
-async def llm_call(state: ChatAgentState):
+async def llm_call(state: GeneralChatAgentState):
     """LLM decides whether to call a tool or not"""
 
     if llm_with_tools is None:
@@ -110,7 +110,7 @@ async def tool_node(state: dict):
 
 
 # Conditional edge function to route to the tool node or end based upon whether the LLM made a tool call
-def should_continue(state: ChatAgentState):
+def should_continue(state: GeneralChatAgentState):
     """Decide if we should continue the loop or stop based upon whether the LLM made a tool call"""
 
     messages = state["messages"]
@@ -125,7 +125,7 @@ def should_continue(state: ChatAgentState):
 
 
 # Build workflow
-main_graph = StateGraph(ChatAgentState)
+main_graph = StateGraph(GeneralChatAgentState)
 
 # Add nodes
 main_graph.add_node(
@@ -142,7 +142,7 @@ main_graph.add_edge("tool_node", "llm_call")
 
 
 
-async def compile_chat_graph(
+async def compile_executive_producer_agent_graph(
     thread_id=None,
     human_message="Hey!",
 ):
@@ -175,7 +175,7 @@ async def compile_chat_graph(
     print("\n\n last message => ", response_messages[-1].content)
 
 
-# asyncio.run(compile_chat_graph(
+# asyncio.run(compile_executive_producer_agent_graph(
 #     thread_id="45--78-0--hcehj-cd-vc-df-v-ef-v-ef--vf",
 #     human_message="Who are you?"
 # ))

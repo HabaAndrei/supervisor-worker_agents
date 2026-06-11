@@ -2,7 +2,7 @@ from langchain_core.messages import AnyMessage
 from langchain.agents import AgentState
 
 
-class ChatAgentState(AgentState):
+class GeneralChatAgentState(AgentState):
     """
     Custom state class chat agent
 
