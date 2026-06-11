@@ -25,9 +25,7 @@ async def scene_planner(question: str) -> str:
         config=llm_config_extra if llm_config_extra else None,
     )
 
-    response_messages = response.get("messages", [])
-
-    final_content = response_messages[-1].content
+    final_content = response.content
 
     log_message("Scene planner agent finished")
 
