@@ -1,3 +1,4 @@
+from ...character_creator_agent_resource.main import character_creator
 from ...utils.state_declaration import GeneralChatAgentState
 from langchain.tools import tool
 
@@ -5,15 +6,15 @@ from langchain.tools import tool
 @tool(
     description=(
         "Delegate character creation to the Character Creator agent. It creates "
-        "the main characters for an existing story concept. Only call this after "
-        "the Story Generator has produced the story concept."
+        "the character profiles, motivations, and relationships for an existing "
+        "story concept. Only call this after the Story Generator has produced "
+        "the story concept. The Character Creator has no memory and only knows "
+        "what you pass it, so 'task' must contain the full story concept and "
+        "the assignment."
     )
 )
 async def call_character_creator_agent(
-    state: GeneralChatAgentState = None
+    task: str,
+    state: GeneralChatAgentState = None,
 ):
-    return (
-        "Error: The Character Creator agent is not implemented yet. Do not call "
-        "this tool again. Continue the task yourself and clearly state in your "
-        "report that the Character Creator was unavailable."
-    )
+    return await character_creator(task)
