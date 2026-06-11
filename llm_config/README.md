@@ -51,7 +51,7 @@ CONFIG:                           # Extra provider options.
 | `SYSTEM_PROMPT` | Yes | Agent `llm_call` nodes | Prepended as a `SystemMessage` to the conversation on every LLM invocation. |
 | `MODEL` | Yes | Agent module setup | `provider:model` string consumed by `init_chat_model`. |
 | `TEMPERATURE` | Yes | Agent module setup | Sampling temperature. |
-| `CONFIG` | No | — | Additional per-agent options (e.g. `prompt_cache_key` for prompt caching). Not currently consumed by the agent code. |
+| `CONFIG` | No | Agent LLM calls | Additional provider options passed as keyword arguments on every LLM invocation (e.g. `prompt_cache_key` for OpenAI prompt caching). |
 
 ## Adding a new agent
 
