@@ -43,8 +43,6 @@ async def llm_call(state: ChatAgentState):
 
     state_messages = state["messages"]
 
-    print(" agent_config[SYSTEM_PROMPT] => ", agent_config["SYSTEM_PROMPT"])
-
     updated_messages = await llm_with_tools.ainvoke(
         [SystemMessage(content=(agent_config["SYSTEM_PROMPT"]))]
         + state_messages,
@@ -178,6 +176,6 @@ async def compile_chat_graph(
 
 
 # asyncio.run(compile_chat_graph(
-#     thread_id="45637890--hcehj-cd-vc-df-v-ef-v-ef--vf",
-#     human_message="what is your name  ?"
+#     thread_id="45--78-0--hcehj-cd-vc-df-v-ef-v-ef--vf",
+#     human_message="Who are you?"
 # ))
