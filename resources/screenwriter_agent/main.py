@@ -62,7 +62,7 @@ async def tool_node(state: dict):
 
     # Log tool calls being executed in parallel
     tool_names = [tool_call["name"] for tool_call in state["messages"][-1].tool_calls]
-    log_message(f"Chat agent executing tools in parallel: {tool_names}")
+    log_message(f"Screenwriter agent executing tools in parallel: {tool_names}")
 
     tool_calls = state["messages"][-1].tool_calls
 
@@ -72,7 +72,8 @@ async def tool_node(state: dict):
         tool_call_id = tool_call["id"]
 
         log_important_step(
-            f"Executing chat tool: {tool_name}", f"Args: {list(tool_args.keys())}"
+            f"Screenwriter agent executing tool: {tool_name}",
+            f"Args: {list(tool_args.keys())}",
         )
 
         if tool_name in tools_by_name:
@@ -82,10 +83,13 @@ async def tool_node(state: dict):
 
             # Execute the tool asynchronously and get the result
             tool_output = await tool.ainvoke(tool_args)
-            log_message(f"Chat tool {tool_name} completed successfully")
+            log_message(f"Screenwriter agent tool {tool_name} completed successfully")
             return (tool_call_id, tool_output)
         else:
-            log_error("Unknown tool requested", details=f"Tool: {tool_name}")
+            log_error(
+                "Screenwriter agent received unknown tool request",
+                details=f"Tool: {tool_name}",
+            )
             return (tool_call_id, f"Error: Unknown tool '{tool_name}'")
 
     # Process ALL tool calls in parallel
@@ -147,6 +151,8 @@ async def compile_screenwriter_agent_graph(
     human_message="Hey!",
 ):
 
+    log_important_step("Screenwriter agent invoked", f"Thread id: {thread_id}")
+
     checkpointer = await get_checkpointer()
     compiled_main_graph = main_graph.compile(checkpointer=checkpointer)
 
@@ -170,6 +176,8 @@ async def compile_screenwriter_agent_graph(
     response_messages = response.get("messages", [])
 
     final_content = response_messages[-1].content
+
+    log_message(f"Screenwriter agent finished | Thread id: {thread_id}")
 
     return f"Thread id: {thread_id}\nContent: {final_content}"
 
