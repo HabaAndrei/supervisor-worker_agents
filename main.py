@@ -1,9 +1,12 @@
 import asyncio
 import sys
+from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+TRANSCRIPTS_DIR = Path(__file__).resolve().parent / "logs" / "visualizations"
 
 
 async def run_main_agent(human_message: str, thread_id: str | None = None) -> str:
@@ -27,14 +30,18 @@ async def run_main_agent(human_message: str, thread_id: str | None = None) -> st
 
 
 async def visualize_subagents(main_thread_id: str) -> str:
-    """Print the full subagent delegation tree of a run.
+    """Print the subagent delegation tree of a run and write the full
+    interaction transcript to a separate file.
 
     The only entry point for visualization: pass the MAIN thread id (the one
-    run_main_agent was invoked with) and the whole hierarchy - child agent
-    threads and stateless leaf calls - is rebuilt from checkpointed state
-    and printed as an ASCII tree.
+    run_main_agent was invoked with). The hierarchy is rebuilt from
+    checkpointed state and printed as an ASCII tree, and every message
+    exchanged between the agents (tasks, tool calls with their arguments,
+    reports, final answers) is saved untruncated to
+    logs/visualizations/<main_thread_id>.md for detailed inspection.
     """
     from resources.utils.subagent_visualization import (
+        build_run_transcript,
         build_subagent_tree,
         render_subagent_tree,
     )
@@ -42,6 +49,13 @@ async def visualize_subagents(main_thread_id: str) -> str:
     tree = await build_subagent_tree(main_thread_id)
     rendering = render_subagent_tree(tree)
     print(rendering)
+
+    transcript = await build_run_transcript(main_thread_id)
+    TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
+    transcript_path = TRANSCRIPTS_DIR / f"{main_thread_id}.md"
+    transcript_path.write_text(transcript)
+    print(f"\nDetailed interaction transcript: {transcript_path}")
+
     return rendering
 
 
