@@ -16,6 +16,7 @@ from llm_config.main import llm_config
 from logging_config import log_error, log_message, log_important_step
 from ..utils.handle_messages import fix_dangling_tool_calls
 from ..utils.context_isolation import run_isolated
+from ..utils.subagent_tracking import merge_subagent_threads
 
 agent_config = llm_config["screenwriter_agent"]
 
@@ -117,7 +118,12 @@ async def tool_node(state: dict):
             )
 
     return {
-        "messages": state["messages"] + tool_messages
+        "messages": state["messages"] + tool_messages,
+        # Checkpoint every child thread id so the whole subagent tree can be
+        # rebuilt from state alone (see utils/subagent_visualization.py)
+        "subagent_threads": merge_subagent_threads(
+            state.get("subagent_threads"), tool_calls, tool_call_results
+        ),
     }
 
 
