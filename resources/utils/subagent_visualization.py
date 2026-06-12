@@ -12,6 +12,7 @@ Programmatic use:
     threads = await get_subagent_threads(thread_id)   # {"screenwriter": [...]}
     tree = await build_subagent_tree(thread_id)       # full nested dict
     print(render_subagent_tree(tree))                 # ASCII tree
+    report = await build_run_transcript(thread_id)    # full interaction log (markdown)
 """
 
 from .store_connections import get_checkpointer
@@ -141,3 +142,101 @@ def render_subagent_tree(node: dict) -> str:
         lines.append(branch + child_lines[0])
         lines.extend(continuation + line for line in child_lines[1:])
     return "\n".join(lines)
+
+
+def _stateful_nodes(node) -> list[dict]:
+    """Flatten the tree to its checkpointed agents, parent before children.
+
+    Stateless leaf agents are skipped: their full interaction already appears
+    inside the parent's transcript as a tool call + tool result.
+    """
+    nodes = [node]
+    for child in node.get("children") or []:
+        if not child.get("stateless"):
+            nodes.extend(_stateful_nodes(child))
+    return nodes
+
+
+def render_thread_transcript(agent_name: str, thread_id: str, messages) -> str:
+    """Render one thread's full message history as readable markdown."""
+    lines = [
+        f"## {agent_name} — thread `{thread_id}` ({len(messages)} messages)",
+        "",
+    ]
+
+    # Tool results only carry a tool_call_id; recover the tool name from the
+    # AI message that requested the call
+    tool_name_by_call_id = {}
+    for message in messages:
+        for tool_call in getattr(message, "tool_calls", None) or []:
+            tool_name_by_call_id[tool_call["id"]] = tool_call["name"]
+
+    for index, message in enumerate(messages, 1):
+        role = getattr(message, "type", type(message).__name__)
+        content = str(message.content or "").strip()
+        tool_calls = getattr(message, "tool_calls", None) or []
+
+        if role == "human":
+            lines.append(f"### [{index}] Task given to {agent_name}")
+            lines.extend(["", content, ""])
+        elif role == "ai" and tool_calls:
+            called = ", ".join(tc["name"] for tc in tool_calls)
+            lines.append(f"### [{index}] {agent_name} delegates → {called}")
+            if content:
+                lines.extend(["", content])
+            for tool_call in tool_calls:
+                arguments = tool_call.get("args") or {}
+                lines.extend(["", f"**{tool_call['name']}**"])
+                for key, value in arguments.items():
+                    if key == "task":
+                        lines.extend(["", "task:", "", "```", str(value), "```"])
+                    else:
+                        lines.append(f"- {key}: `{value}`")
+            lines.append("")
+        elif role == "ai":
+            lines.append(f"### [{index}] {agent_name} final answer")
+            lines.extend(["", content, ""])
+        elif role == "tool":
+            tool_name = tool_name_by_call_id.get(
+                getattr(message, "tool_call_id", None), "tool"
+            )
+            lines.append(f"### [{index}] Result from {tool_name}")
+            lines.extend(["", content, ""])
+        else:
+            lines.append(f"### [{index}] {role}")
+            lines.extend(["", content, ""])
+
+    return "\n".join(lines)
+
+
+async def build_run_transcript(main_thread_id: str) -> str:
+    """Build the full interaction report of a run as one markdown document.
+
+    Contains the delegation tree followed by the complete, untruncated
+    message history of every checkpointed agent in the hierarchy - every
+    task, every tool call with its arguments, every report - so the whole
+    chain of reasoning between agents can be read top to bottom.
+    """
+    tree = await build_subagent_tree(main_thread_id)
+
+    sections = [
+        f"# Subagent run `{main_thread_id}`",
+        "",
+        "## Delegation tree",
+        "",
+        "```",
+        render_subagent_tree(tree),
+        "```",
+        "",
+    ]
+
+    for node in _stateful_nodes(tree):
+        values = await get_state_values(node["thread_id"]) or {}
+        sections.append(
+            render_thread_transcript(
+                node["agent"], node["thread_id"], values.get("messages") or []
+            )
+        )
+        sections.append("")
+
+    return "\n".join(sections)
