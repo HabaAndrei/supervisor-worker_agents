@@ -1,3 +1,7 @@
+from typing import Annotated
+
+from langgraph.prebuilt import InjectedState
+
 from ...story_generator_agent_resource.main import story_generator
 from ...utils.state_declaration import GeneralChatAgentState
 from langchain.tools import tool
@@ -15,6 +19,6 @@ from langchain.tools import tool
 )
 async def call_story_generator_agent(
     task: str,
-    state: GeneralChatAgentState = None,
+    state: Annotated[GeneralChatAgentState, InjectedState] = None,
 ):
     return await story_generator(task)

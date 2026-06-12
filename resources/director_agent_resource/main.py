@@ -30,7 +30,7 @@ async def initialize_tools():
     global llm_with_tools
 
     # Bind all tools to the LLM
-    llm_with_tools = llm.bind_tools(tools)
+    llm_with_tools = llm.bind_tools(tools, parallel_tool_calls=True)
 
     return llm_with_tools
 
@@ -82,8 +82,13 @@ async def tool_node(state: dict):
             tool = tools_by_name[tool_name]
             tool_args["state"] = state
 
-            # Execute the tool asynchronously and get the result
-            tool_output = await tool.ainvoke(tool_args)
+            try:
+                # Execute the tool asynchronously and get the result
+                tool_output = await tool.ainvoke(tool_args)
+            except Exception as error:
+                log_error(f"Director agent tool {tool_name} failed", error=error)
+                return (tool_call_id, f"Error: Tool '{tool_name}' failed: {error}")
+
             log_message(f"Director agent tool {tool_name} completed successfully")
             return (tool_call_id, tool_output)
         else:

@@ -1,3 +1,7 @@
+from typing import Annotated
+
+from langgraph.prebuilt import InjectedState
+
 from ...character_creator_agent_resource.main import character_creator
 from ...utils.state_declaration import GeneralChatAgentState
 from langchain.tools import tool
@@ -15,6 +19,6 @@ from langchain.tools import tool
 )
 async def call_character_creator_agent(
     task: str,
-    state: GeneralChatAgentState = None,
+    state: Annotated[GeneralChatAgentState, InjectedState] = None,
 ):
     return await character_creator(task)

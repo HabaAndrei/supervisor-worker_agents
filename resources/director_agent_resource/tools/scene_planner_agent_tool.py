@@ -1,3 +1,7 @@
+from typing import Annotated
+
+from langgraph.prebuilt import InjectedState
+
 from ...scene_planner_agent_resource.main import scene_planner
 from ...utils.state_declaration import GeneralChatAgentState
 from langchain.tools import tool
@@ -14,6 +18,6 @@ from langchain.tools import tool
 )
 async def call_scene_planner_agent(
     task: str,
-    state: GeneralChatAgentState = None,
+    state: Annotated[GeneralChatAgentState, InjectedState] = None,
 ):
     return await scene_planner(task)

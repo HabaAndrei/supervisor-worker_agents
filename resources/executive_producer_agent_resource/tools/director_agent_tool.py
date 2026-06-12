@@ -1,5 +1,10 @@
+from typing import Annotated
+
+from langgraph.prebuilt import InjectedState
+
 from ...director_agent_resource.main import compile_director_agent_graph
 from ...utils.state_declaration import GeneralChatAgentState
+from ...utils.thread_locks import get_thread_lock
 from langchain.tools import tool
 
 
@@ -9,19 +14,22 @@ from langchain.tools import tool
         "approved story into a structured production vision (using its Scene "
         "Planner) and returns a DIRECTOR REPORT for your review. Only call this "
         "after the Screenwriter's work has been reviewed and approved; never "
-        "call it in parallel with the Screenwriter. The Director only knows "
-        "what you pass it, so 'task' must contain the FULL approved story and "
-        "characters. The Director remembers previous exchanges on this project."
+        "call it in parallel with the Screenwriter. On the first assignment, "
+        "'task' must contain the FULL approved story and characters; on "
+        "revisions, the Director remembers previous exchanges on this project."
     )
 )
 async def call_director_agent(
     task: str,
-    state: GeneralChatAgentState = None,
+    state: Annotated[GeneralChatAgentState, InjectedState] = None,
 ):
     parent_thread_id = state.get("thread_id") if state else None
     child_thread_id = f"{parent_thread_id}-director"
 
-    return await compile_director_agent_graph(
-        thread_id=child_thread_id,
-        human_message=task,
-    )
+    # Concurrent graph runs on one thread corrupt its persisted history, so
+    # parallel calls to this tool serialize on the child thread
+    async with get_thread_lock(child_thread_id):
+        return await compile_director_agent_graph(
+            thread_id=child_thread_id,
+            human_message=task,
+        )
