@@ -1,4 +1,5 @@
 import asyncio
+from uuid import uuid4
 from langchain.chat_models import init_chat_model
 from ..utils.state_declaration import GeneralChatAgentState
 from langgraph.graph import StateGraph, START, END
@@ -14,6 +15,7 @@ from langgraph.types import RetryPolicy
 from llm_config.main import llm_config
 from logging_config import log_error, log_message, log_important_step
 from ..utils.handle_messages import fix_dangling_tool_calls
+from ..utils.context_isolation import run_isolated
 
 agent_config = llm_config["director_agent"]
 
@@ -156,6 +158,10 @@ async def compile_director_agent_graph(
     thread_id=None,
     human_message="Hey!",
 ):
+    # Without an explicit thread id every caller would checkpoint into one
+    # shared conversation, so fall back to a fresh unique thread
+    if not thread_id:
+        thread_id = uuid4().hex
 
     log_important_step("Director agent invoked", f"Thread id: {thread_id}")
 
@@ -165,19 +171,25 @@ async def compile_director_agent_graph(
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 1000}
     user_message = [HumanMessage(content=human_message)]
 
-    state = await compiled_main_graph.aget_state(config)
+    async def execute_graph():
+        state = await compiled_main_graph.aget_state(config)
 
-    old_messages = fix_dangling_tool_calls(state[0].get("messages", []))
+        old_messages = fix_dangling_tool_calls(state[0].get("messages", []))
 
-    response = await compiled_main_graph.ainvoke(
-        {
-            "messages": old_messages + user_message,
-            "thread_id": thread_id,
-        },
-        config,
-        subgraphs=True,
-        durability="async",
-    )
+        return await compiled_main_graph.ainvoke(
+            {
+                "messages": old_messages + user_message,
+                "thread_id": thread_id,
+            },
+            config,
+            subgraphs=True,
+            durability="async",
+        )
+
+    # This graph can run inside a parent agent's tool execution; run_isolated
+    # severs the inherited runnable context so it checkpoints as its own
+    # top-level conversation instead of as a per-call nested subgraph
+    response = await run_isolated(execute_graph)
 
     response_messages = response.get("messages", [])
 
