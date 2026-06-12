@@ -1,7 +1,7 @@
 [project]
 name = "supervisor-worker-agents"
 version = "0.1.0"
-description = "Add your description here"
+description = "Hands-on tutorial: hierarchical supervisor-worker multi-agent systems with LangGraph, with persistent resumable agent conversations and built-in delegation-tree visualization"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
