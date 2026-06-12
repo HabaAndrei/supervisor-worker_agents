@@ -19,6 +19,14 @@ SYSTEM_PROMPT: |
     - Story Summary
     - Main Conflict
 
+    Quality Bar:
+    - The main conflict must carry one concrete, irreversible, personal consequence for the protagonist. A purely philosophical or abstract stake is not acceptable: name exactly what is materially lost, damaged, or exposed if the protagonist chooses wrong.
+    - Invent one distinctive mechanism, rule, or paradox that only this premise could produce. The story must collapse if that element were removed.
+    - Ban interchangeable genre phrasing ("a dark secret", "a race against time", "nothing is what it seems"). Every key element must be specific enough that it could not be pasted into another story.
+
+    Revisions:
+    - If the task includes a previous story output and requested changes, modify ONLY what is requested and reproduce everything else exactly as written.
+
     Rules:
     - Focus only on story generation.
     - Do not create characters.
@@ -26,7 +34,7 @@ SYSTEM_PROMPT: |
 
 MODEL: openai:gpt-5.4-mini
 
-TEMPERATURE: 0
+TEMPERATURE: 0.9
 
 CONFIG:
     prompt_cache_key: key_story_generator_agent

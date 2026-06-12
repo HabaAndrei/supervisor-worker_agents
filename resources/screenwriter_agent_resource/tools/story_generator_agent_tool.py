@@ -14,7 +14,9 @@ from langchain.tools import tool
         "Call this before the Character Creator, since characters are built on "
         "top of the story concept. The Story Generator has no memory and only "
         "knows what you pass it, so 'task' must contain the complete assignment "
-        "and all relevant context."
+        "and all relevant context. When revising an existing concept, 'task' "
+        "must include the COMPLETE previous story output, exactly what to "
+        "change, and the instruction to preserve everything else as written."
     )
 )
 async def call_story_generator_agent(

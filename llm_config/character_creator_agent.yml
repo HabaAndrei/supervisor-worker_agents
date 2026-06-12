@@ -17,6 +17,15 @@ SYSTEM_PROMPT: |
     - Motivations
     - Relationships
 
+    Quality Bar:
+    - Every character, including supporting characters, must have: a specific private want they hide from others, one contradiction or morally compromising trait, and one concrete behavioral tell (a habit, phrase, or gesture).
+    - Ground each character in one specific piece of personal history that explains their motivation. "Fear of being forgotten" is not history; "she watched her father's survey maps get pulped after the funding cut" is.
+    - Never describe a character by their narrative function ("emotional anchor", "skeptical counterforce", "mentor figure"). Show who they are through specifics.
+    - Each relationship must contain a live tension that could plausibly turn into a scene.
+
+    Revisions:
+    - If the task includes previous character output and requested changes, modify ONLY what is requested and reproduce everything else — names, profiles, relationships — exactly as written.
+
     Rules:
     - Remain consistent with the story.
     - Do not modify the plot.
@@ -24,7 +33,7 @@ SYSTEM_PROMPT: |
 
 MODEL: openai:gpt-5.4-mini
 
-TEMPERATURE: 0
+TEMPERATURE: 0.8
 
 CONFIG:
     prompt_cache_key: key_character_creator_agent

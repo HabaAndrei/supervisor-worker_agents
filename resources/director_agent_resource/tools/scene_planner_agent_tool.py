@@ -13,7 +13,10 @@ from langchain.tools import tool
         "approved story into a scene-by-scene production plan: Scene List, "
         "Scene Descriptions, and Production Notes. The Scene Planner has no "
         "memory and only knows what you pass it, so 'task' must contain the "
-        "FULL approved story, including characters and any constraints."
+        "FULL approved story, including characters and any constraints. When "
+        "revising an existing scene plan, 'task' must also include the COMPLETE "
+        "previous scene plan, exactly what to change, and the instruction to "
+        "preserve every other scene as written."
     )
 )
 async def call_scene_planner_agent(
