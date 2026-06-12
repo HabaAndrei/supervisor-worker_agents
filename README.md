@@ -53,11 +53,50 @@ executive_producer            (supervisor, checkpointed conversation)
   conversations in Postgres, so every delegation can be resumed by thread id.
 - Each agent's prompt, model and temperature live in [llm_config/](llm_config/).
 
+**See it in action without installing anything:** a complete transcript of a
+real run - every task, delegation and report between the agents - is
+committed at
+[logs/visualizations/](logs/visualizations/6c5ae90d789140649e52f5a88bce3976.md).
+
+## One delegation round-trip
+
+How a request flows down the hierarchy and back up, and how a revision
+resumes the exact same conversation by thread id:
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant EP as Executive Producer
+    participant SW as Screenwriter
+    participant SG as Story Generator
+    participant CC as Character Creator
+
+    User->>EP: "Create a short film about a lighthouse keeper"
+    EP->>SW: call_screenwriter_agent(task)
+    Note over SW: new checkpointed thread<br/>{main_id}-screenwriter-{uuid}
+    SW->>SG: story task (stateless call)
+    SG-->>SW: story concept
+    SW->>CC: character task (full story included)
+    CC-->>SW: character profiles
+    SW-->>EP: SCREENWRITER REPORT<br/>(starts with "Thread id: ...")
+    Note over EP: reviews the report,<br/>decides revisions are needed
+    EP->>SW: feedback (same thread_id - full context kept)
+    SW-->>EP: revised report
+    Note over EP: approves, then assigns the Director<br/>the same way, and finally<br/>delivers the result
+    EP-->>User: complete film package
+```
+
+The same loop repeats for the Director and its Scene Planner. Every solid
+arrow into an agent is a tool call carrying the full task; every dashed
+arrow back is a report the supervisor reviews before deciding what happens
+next.
+
 ## Requirements
 
 - Python >= 3.13 and [uv](https://docs.astral.sh/uv/)
 - A running PostgreSQL database (used for conversation checkpoints)
-- A `.env` file in the project root with these keys:
+- A `.env` file in the project root (copy [.env.example](.env.example)) with
+  these keys:
 
 ```
 OPENAI_API_KEY=...
@@ -156,6 +195,9 @@ Stateless leaf agents (story generator, character creator, scene planner)
 have no thread of their own; their exchanges appear inside the parent's
 transcript as the tool call + result.
 
+A complete transcript from a real run is committed in this repo:
+[logs/visualizations/6c5ae90d…md](logs/visualizations/6c5ae90d789140649e52f5a88bce3976.md).
+
 Running `uv run main.py` with no arguments prints this usage help.
 
 ### Programmatic use
@@ -172,6 +214,33 @@ result = asyncio.run(run_main_agent("Create a short film about a lighthouse keep
 asyncio.run(visualize_subagents("<main_thread_id>"))
 ```
 
+
+## Code tour
+
+Where to look to understand each pattern, in reading order:
+
+1. [resources/executive_producer_agent_resource/main.py](resources/executive_producer_agent_resource/main.py) -
+   the supervisor graph: an LLM node and a tool node in a loop, checkpointed
+   per thread, with retry policies and parallel tool execution. The
+   screenwriter and director graphs are the same shape one level down.
+2. [resources/executive_producer_agent_resource/tools/screenwriter_agent_tool.py](resources/executive_producer_agent_resource/tools/screenwriter_agent_tool.py) -
+   a delegation tool: how child thread ids are named, how a passed
+   `thread_id` is validated against fabricated or foreign ids (returning an
+   LLM-recoverable error string instead of raising), and how per-thread
+   locks serialize concurrent runs of one conversation.
+3. [llm_config/](llm_config/) - prompts as contracts: each YAML defines the
+   agent's role, report format, quality bar and revision rules, plus model
+   and temperature per role.
+4. [resources/utils/subagent_tracking.py](resources/utils/subagent_tracking.py) -
+   how every spawned subagent's thread id is folded into checkpointed state
+   after each tool round.
+5. [resources/utils/subagent_visualization.py](resources/utils/subagent_visualization.py) -
+   rebuilding the full delegation tree and the complete interaction
+   transcript of any run from state alone.
+6. [resources/utils/context_isolation.py](resources/utils/context_isolation.py) -
+   why a child graph launched inside a parent's tool call must be severed
+   from the inherited runnable context to checkpoint as its own top-level
+   conversation.
 
 ## Applying this approach to your own project
 
@@ -214,3 +283,7 @@ resources/
   scene_planner_agent_resource/          stateless leaf agent
   utils/                                 state, checkpointing, subagent tracking + visualization
 ```
+
+## License
+
+[MIT](LICENSE)
